@@ -8,6 +8,7 @@ let zoneLabelMarkers = {};
 let isAddingTree = false;
 let editingTreeId = null;
 let treeCounter = 50;
+let currentFilter = 'all';
 
 // Measure state
 let isMeasuring = false;
@@ -209,6 +210,20 @@ function setupUI() {
     zoneDropdown.classList.add('hidden');
   };
 
+  // Filter dropdown
+  const filterBtn = document.getElementById('filterBtn');
+  const filterDropdown = document.getElementById('filterDropdown');
+
+  filterBtn.onclick = function(e) {
+    e.stopPropagation();
+    filterDropdown.classList.toggle('hidden');
+    zoneDropdown.classList.add('hidden');
+    layersDropdown.classList.add('hidden');
+  };
+
+  // Generate filter list
+  generateFilterList();
+
   // Zone dropdown
   const zoneBtn = document.getElementById('zoneBtn');
   const zoneDropdown = document.getElementById('zoneDropdown');
@@ -216,6 +231,7 @@ function setupUI() {
   zoneBtn.onclick = function(e) {
     e.stopPropagation();
     zoneDropdown.classList.toggle('hidden');
+    filterDropdown.classList.add('hidden');
     layersDropdown.classList.add('hidden');
   };
 
@@ -230,6 +246,9 @@ function setupUI() {
     if (!zoneBtn.contains(e.target) && !zoneDropdown.contains(e.target)) {
       zoneDropdown.classList.add('hidden');
     }
+    if (!filterBtn.contains(e.target) && !filterDropdown.contains(e.target)) {
+      filterDropdown.classList.add('hidden');
+    }
   });
 
   // Layer checkboxes
@@ -241,12 +260,6 @@ function setupUI() {
   };
   document.getElementById('layerLabels').onchange = function(e) {
     e.target.checked ? map.addLayer(labelsLayer) : map.removeLayer(labelsLayer);
-  };
-
-  // Search input
-  const searchInput = document.getElementById('searchInput');
-  searchInput.oninput = function(e) {
-    filterTrees(e.target.value);
   };
 
   // Add tree button
@@ -339,20 +352,52 @@ function zoomToAllZones() {
   document.getElementById('zoneDropdown').classList.add('hidden');
 }
 
-// Filter trees by search query
-function filterTrees(query) {
-  query = query.toLowerCase().trim();
+// Generate filter list for species dropdown
+function generateFilterList() {
+  const container = document.getElementById('filterList');
 
+  // Get unique species from trees
+  const species = [...new Set(trees.map(t => t.species))].sort();
+
+  let html = `
+    <button onclick="filterBySpecies('all')" class="w-full flex items-center justify-between px-4 py-2.5 border-b border-slate-700 hover:bg-slate-700/50 transition-colors text-left ${currentFilter === 'all' ? 'bg-green-500/20 text-green-400' : ''}">
+      <span class="text-sm ${currentFilter === 'all' ? 'text-green-400' : 'text-slate-300'}">All Species</span>
+      <span class="text-xs text-slate-500">${trees.length}</span>
+    </button>
+  `;
+
+  species.forEach(sp => {
+    const count = trees.filter(t => t.species === sp).length;
+    const isActive = currentFilter === sp;
+    html += `
+      <button onclick="filterBySpecies('${sp}')" class="w-full flex items-center justify-between px-4 py-2.5 border-b border-slate-700 hover:bg-slate-700/50 transition-colors text-left ${isActive ? 'bg-green-500/20' : ''}">
+        <span class="text-sm ${isActive ? 'text-green-400' : 'text-slate-300'}">${sp}</span>
+        <span class="text-xs text-slate-500">${count}</span>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// Filter trees by species
+function filterBySpecies(species) {
+  currentFilter = species;
+
+  // Update button label
+  document.getElementById('filterLabel').textContent = species === 'all' ? 'All Species' : species;
+
+  // Update filter list to show active state
+  generateFilterList();
+
+  // Filter markers
   trees.forEach(tree => {
     const marker = treeMarkers[tree.id];
     const label = treeLabelMarkers[tree.id];
 
     if (!marker || !label) return;
 
-    const matches = query === '' ||
-      tree.id.toLowerCase().includes(query) ||
-      tree.species.toLowerCase().includes(query) ||
-      tree.risk.toLowerCase().includes(query);
+    const matches = species === 'all' || tree.species === species;
 
     if (matches) {
       marker.setStyle({ opacity: 0.4, fillOpacity: 1 });
@@ -362,6 +407,9 @@ function filterTrees(query) {
       label.getElement().style.opacity = '0.2';
     }
   });
+
+  // Close dropdown
+  document.getElementById('filterDropdown').classList.add('hidden');
 }
 
 // Measurement tool
