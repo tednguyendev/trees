@@ -32,19 +32,50 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
           </svg>
         </button>
-        <div id="layersDropdown" class="hidden absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border p-2 z-[9999]">
-          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
-            <input type="checkbox" id="layerTrees" checked class="rounded">
-            <span class="text-sm">Trees</span>
-          </label>
-          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
-            <input type="checkbox" id="layerZones" checked class="rounded">
-            <span class="text-sm">Zones</span>
-          </label>
-          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
-            <input type="checkbox" id="layerLabels" checked class="rounded">
-            <span class="text-sm">Labels</span>
-          </label>
+        <div id="layersDropdown" class="hidden absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-lg border z-[9999] overflow-hidden">
+          <!-- Layer 3 -->
+          <div class="flex items-center justify-between px-3 py-2.5 border-b bg-gray-50">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 w-4">3</span>
+              <span class="text-sm font-medium">Labels</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="layerLabels" checked class="sr-only peer">
+              <div class="w-9 h-5 bg-gray-300 peer-checked:bg-green-500 rounded-full transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+            </label>
+          </div>
+          <!-- Layer 2 -->
+          <div class="flex items-center justify-between px-3 py-2.5 border-b">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 w-4">2</span>
+              <span class="text-sm font-medium">Zone Boundaries</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="layerZones" checked class="sr-only peer">
+              <div class="w-9 h-5 bg-gray-300 peer-checked:bg-green-500 rounded-full transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+            </label>
+          </div>
+          <!-- Layer 1 -->
+          <div class="flex items-center justify-between px-3 py-2.5 border-b">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 w-4">1</span>
+              <span class="text-sm font-medium">Tree Positions</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="layerTrees" checked class="sr-only peer">
+              <div class="w-9 h-5 bg-gray-300 peer-checked:bg-green-500 rounded-full transition-colors"></div>
+              <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+            </label>
+          </div>
+          <!-- Base Map -->
+          <div class="flex items-center justify-between px-3 py-2.5 bg-gray-100">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 w-4"></span>
+              <span class="text-sm text-gray-500">Base Map (street)</span>
+            </div>
+          </div>
         </div>
       </div>
 
