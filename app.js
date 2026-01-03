@@ -9,13 +9,7 @@ let isAddingTree = false;
 let editingTreeId = null;
 let treeCounter = 50;
 let currentFilter = 'all';
-
-// Measure state
-let isMeasuring = false;
-let measurePoint1 = null;
-let measurePoint2 = null;
-let measureMarkers = [];
-let measureLine = null;
+let currentRiskFilter = 'all';
 
 // Layer groups
 let treesLayer, zonesLayer, labelsLayer;
@@ -251,6 +245,28 @@ function setupUI() {
     }
   });
 
+  // Risk filter dropdown
+  const riskFilterBtn = document.getElementById('riskFilterBtn');
+  const riskFilterDropdown = document.getElementById('riskFilterDropdown');
+
+  riskFilterBtn.onclick = function(e) {
+    e.stopPropagation();
+    riskFilterDropdown.classList.toggle('hidden');
+    filterDropdown.classList.add('hidden');
+    zoneDropdown.classList.add('hidden');
+    layersDropdown.classList.add('hidden');
+  };
+
+  // Generate risk filter list
+  generateRiskFilterList();
+
+  // Close risk filter dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!riskFilterBtn.contains(e.target) && !riskFilterDropdown.contains(e.target)) {
+      riskFilterDropdown.classList.add('hidden');
+    }
+  });
+
   // Layer checkboxes
   document.getElementById('layerTrees').onchange = function(e) {
     e.target.checked ? map.addLayer(treesLayer) : map.removeLayer(treesLayer);
@@ -282,22 +298,6 @@ function setupUI() {
   document.getElementById('deleteTreeBtn').onclick = deleteTree;
   document.getElementById('treeModal').onclick = function(e) {
     if (e.target.id === 'treeModal') closeModal();
-  };
-
-  // Measure tool
-  document.getElementById('measureBtn').onclick = function(e) {
-    e.stopPropagation();
-    startMeasure();
-  };
-
-  document.getElementById('cancelMeasure').onclick = function(e) {
-    e.stopPropagation();
-    exitMeasureMode();
-  };
-
-  document.getElementById('clearMeasure').onclick = function(e) {
-    e.stopPropagation();
-    clearMeasurement();
   };
 }
 
@@ -390,14 +390,74 @@ function filterBySpecies(species) {
   // Update filter list to show active state
   generateFilterList();
 
-  // Filter markers
+  // Apply combined filters (species + risk)
+  applyFilters();
+
+  // Close dropdown
+  document.getElementById('filterDropdown').classList.add('hidden');
+}
+
+// Generate risk filter list for dropdown
+function generateRiskFilterList() {
+  const container = document.getElementById('riskFilterList');
+
+  const riskLevels = [
+    { value: 'all', label: 'All Risk', color: null },
+    { value: 'low', label: 'Low Risk', color: '#22c55e' },
+    { value: 'medium', label: 'Medium Risk', color: '#f59e0b' },
+    { value: 'high', label: 'High Risk', color: '#ef4444' }
+  ];
+
+  let html = '';
+
+  riskLevels.forEach(level => {
+    const count = level.value === 'all' ? trees.length : trees.filter(t => t.risk === level.value).length;
+    const isActive = currentRiskFilter === level.value;
+    const colorDot = level.color ? `<span class="w-2.5 h-2.5 rounded-full" style="background-color: ${level.color}"></span>` : '';
+
+    html += `
+      <button onclick="filterByRisk('${level.value}')" class="w-full flex items-center justify-between px-4 py-2.5 border-b border-slate-700 hover:bg-slate-700/50 transition-colors text-left ${isActive ? 'bg-green-500/20' : ''}">
+        <span class="flex items-center gap-2">
+          ${colorDot}
+          <span class="text-sm ${isActive ? 'text-green-400' : 'text-slate-300'}">${level.label}</span>
+        </span>
+        <span class="text-xs text-slate-500">${count}</span>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// Filter trees by risk level
+function filterByRisk(risk) {
+  currentRiskFilter = risk;
+
+  // Update button label
+  const labels = { all: 'All Risk', low: 'Low Risk', medium: 'Medium Risk', high: 'High Risk' };
+  document.getElementById('riskFilterLabel').textContent = labels[risk];
+
+  // Update filter list to show active state
+  generateRiskFilterList();
+
+  // Apply combined filters (species + risk)
+  applyFilters();
+
+  // Close dropdown
+  document.getElementById('riskFilterDropdown').classList.add('hidden');
+}
+
+// Apply both species and risk filters
+function applyFilters() {
   trees.forEach(tree => {
     const marker = treeMarkers[tree.id];
     const label = treeLabelMarkers[tree.id];
 
     if (!marker || !label) return;
 
-    const matches = species === 'all' || tree.species === species;
+    const matchesSpecies = currentFilter === 'all' || tree.species === currentFilter;
+    const matchesRisk = currentRiskFilter === 'all' || tree.risk === currentRiskFilter;
+    const matches = matchesSpecies && matchesRisk;
 
     if (matches) {
       marker.setStyle({ opacity: 0.4, fillOpacity: 1 });
@@ -407,96 +467,6 @@ function filterBySpecies(species) {
       label.getElement().style.opacity = '0.2';
     }
   });
-
-  // Close dropdown
-  document.getElementById('filterDropdown').classList.add('hidden');
-}
-
-// Measurement tool
-function startMeasure() {
-  isMeasuring = true;
-  measurePoint1 = null;
-  measurePoint2 = null;
-  document.getElementById('measureMode').classList.remove('hidden');
-  document.getElementById('measureBtn').classList.add('hidden');
-  document.getElementById('measureText').textContent = 'Click first point';
-  document.getElementById('map').style.cursor = 'crosshair';
-
-  // Add click handler for measuring
-  map.on('click', onMeasureClick);
-}
-
-function onMeasureClick(e) {
-  if (!isMeasuring) return;
-
-  if (!measurePoint1) {
-    // First point
-    measurePoint1 = e.latlng;
-    const marker = L.circleMarker(e.latlng, {
-      radius: 6,
-      fillColor: '#3b82f6',
-      color: '#3b82f6',
-      weight: 2,
-      fillOpacity: 1
-    }).addTo(map);
-    measureMarkers.push(marker);
-    document.getElementById('measureText').textContent = 'Click second point';
-  } else if (!measurePoint2) {
-    // Second point
-    measurePoint2 = e.latlng;
-    const marker = L.circleMarker(e.latlng, {
-      radius: 6,
-      fillColor: '#3b82f6',
-      color: '#3b82f6',
-      weight: 2,
-      fillOpacity: 1
-    }).addTo(map);
-    measureMarkers.push(marker);
-
-    // Draw line
-    measureLine = L.polyline([measurePoint1, measurePoint2], {
-      color: '#3b82f6',
-      weight: 2,
-      dashArray: '5, 10'
-    }).addTo(map);
-
-    // Calculate distance
-    const distance = measurePoint1.distanceTo(measurePoint2);
-    const distanceText = distance < 1000
-      ? distance.toFixed(1) + ' m'
-      : (distance / 1000).toFixed(2) + ' km';
-
-    document.getElementById('measureDistance').textContent = distanceText;
-    document.getElementById('measureResult').classList.remove('hidden');
-
-    // Exit measure mode but keep result visible
-    exitMeasureMode();
-  }
-}
-
-function exitMeasureMode() {
-  isMeasuring = false;
-  document.getElementById('measureMode').classList.add('hidden');
-  document.getElementById('measureBtn').classList.remove('hidden');
-  document.getElementById('map').style.cursor = '';
-  map.off('click', onMeasureClick);
-}
-
-function clearMeasurement() {
-  measurePoint1 = null;
-  measurePoint2 = null;
-
-  // Remove markers
-  measureMarkers.forEach(m => map.removeLayer(m));
-  measureMarkers = [];
-
-  // Remove line
-  if (measureLine) {
-    map.removeLayer(measureLine);
-    measureLine = null;
-  }
-
-  document.getElementById('measureResult').classList.add('hidden');
 }
 
 // Update zone labels with tree counts
