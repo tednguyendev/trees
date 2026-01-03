@@ -193,12 +193,29 @@ function setupUI() {
   layersBtn.onclick = function(e) {
     e.stopPropagation();
     layersDropdown.classList.toggle('hidden');
+    zoneDropdown.classList.add('hidden');
   };
 
-  // Close dropdown when clicking outside
+  // Zone dropdown
+  const zoneBtn = document.getElementById('zoneBtn');
+  const zoneDropdown = document.getElementById('zoneDropdown');
+
+  zoneBtn.onclick = function(e) {
+    e.stopPropagation();
+    zoneDropdown.classList.toggle('hidden');
+    layersDropdown.classList.add('hidden');
+  };
+
+  // Generate zone list
+  generateZoneList();
+
+  // Close dropdowns when clicking outside
   document.addEventListener('click', function(e) {
     if (!layersBtn.contains(e.target) && !layersDropdown.contains(e.target)) {
       layersDropdown.classList.add('hidden');
+    }
+    if (!zoneBtn.contains(e.target) && !zoneDropdown.contains(e.target)) {
+      zoneDropdown.classList.add('hidden');
     }
   });
 
@@ -211,6 +228,12 @@ function setupUI() {
   };
   document.getElementById('layerLabels').onchange = function(e) {
     e.target.checked ? map.addLayer(labelsLayer) : map.removeLayer(labelsLayer);
+  };
+
+  // Search input
+  const searchInput = document.getElementById('searchInput');
+  searchInput.oninput = function(e) {
+    filterTrees(e.target.value);
   };
 
   // Add tree button
@@ -234,6 +257,82 @@ function setupUI() {
   document.getElementById('treeModal').onclick = function(e) {
     if (e.target.id === 'treeModal') closeModal();
   };
+}
+
+// Generate zone list for dropdown
+function generateZoneList() {
+  const container = document.getElementById('zoneList');
+  let html = '';
+
+  zones.forEach(zone => {
+    const treeCount = trees.filter(t => isTreeInZone(t, zone)).length;
+    html += `
+      <button onclick="zoomToZone('${zone.id}')" class="w-full flex items-center justify-between px-4 py-2.5 border-b border-slate-700 hover:bg-slate-700/50 transition-colors text-left">
+        <span class="text-sm text-slate-300">${zone.name}</span>
+        <span class="text-xs text-slate-500">${treeCount} trees</span>
+      </button>
+    `;
+  });
+
+  // Show all zones option
+  html += `
+    <button onclick="zoomToAllZones()" class="w-full flex items-center justify-between px-4 py-2.5 bg-slate-900/50 hover:bg-slate-700/50 transition-colors text-left">
+      <span class="text-sm text-green-400 font-medium">Show All Zones</span>
+      <span class="text-xs text-slate-500">${trees.length} trees</span>
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+// Check if tree is in zone (simple bounding box check)
+function isTreeInZone(tree, zone) {
+  const bounds = L.polygon(zone.boundary).getBounds();
+  return bounds.contains([tree.lat, tree.lng]);
+}
+
+// Zoom to specific zone
+function zoomToZone(zoneId) {
+  const zone = zones.find(z => z.id === zoneId);
+  if (zone) {
+    map.fitBounds(zone.boundary, { padding: [50, 50] });
+  }
+  document.getElementById('zoneDropdown').classList.add('hidden');
+}
+
+// Zoom to show all zones
+function zoomToAllZones() {
+  const allBounds = L.featureGroup();
+  zones.forEach(zone => {
+    allBounds.addLayer(L.polygon(zone.boundary));
+  });
+  map.fitBounds(allBounds.getBounds(), { padding: [30, 30] });
+  document.getElementById('zoneDropdown').classList.add('hidden');
+}
+
+// Filter trees by search query
+function filterTrees(query) {
+  query = query.toLowerCase().trim();
+
+  trees.forEach(tree => {
+    const marker = treeMarkers[tree.id];
+    const label = treeLabelMarkers[tree.id];
+
+    if (!marker || !label) return;
+
+    const matches = query === '' ||
+      tree.id.toLowerCase().includes(query) ||
+      tree.species.toLowerCase().includes(query) ||
+      tree.risk.toLowerCase().includes(query);
+
+    if (matches) {
+      marker.setStyle({ opacity: 0.4, fillOpacity: 1 });
+      label.getElement().style.opacity = '1';
+    } else {
+      marker.setStyle({ opacity: 0.1, fillOpacity: 0.2 });
+      label.getElement().style.opacity = '0.2';
+    }
+  });
 }
 
 function exitAddMode() {
