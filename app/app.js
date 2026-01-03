@@ -26,6 +26,7 @@ window.onload = function() {
   console.log('App loading...');
   loadData();
   console.log('Trees loaded:', trees.length);
+  generateLayerPanel();
   initMap();
   console.log('Map initialized');
   setupUI();
