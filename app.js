@@ -10,6 +10,8 @@ let editingTreeId = null;
 let treeCounter = 50;
 let currentFilter = 'all';
 let currentRiskFilter = 'all';
+let filteredTrees = [];
+let selectedTreeIndex = -1;
 
 // Layer groups
 let treesLayer, zonesLayer, labelsLayer;
@@ -299,6 +301,13 @@ function setupUI() {
   document.getElementById('treeModal').onclick = function(e) {
     if (e.target.id === 'treeModal') closeModal();
   };
+
+  // Filtered panel
+  document.getElementById('closeFilteredPanel').onclick = function() {
+    document.getElementById('filteredPanel').classList.add('hidden');
+  };
+  document.getElementById('prevTreeBtn').onclick = prevTree;
+  document.getElementById('nextTreeBtn').onclick = nextTree;
 }
 
 // Generate zone list for dropdown
@@ -449,15 +458,21 @@ function filterByRisk(risk) {
 
 // Apply both species and risk filters
 function applyFilters() {
+  // Build filtered trees list
+  filteredTrees = trees.filter(tree => {
+    const matchesSpecies = currentFilter === 'all' || tree.species === currentFilter;
+    const matchesRisk = currentRiskFilter === 'all' || tree.risk === currentRiskFilter;
+    return matchesSpecies && matchesRisk;
+  });
+
+  // Update marker opacity
   trees.forEach(tree => {
     const marker = treeMarkers[tree.id];
     const label = treeLabelMarkers[tree.id];
 
     if (!marker || !label) return;
 
-    const matchesSpecies = currentFilter === 'all' || tree.species === currentFilter;
-    const matchesRisk = currentRiskFilter === 'all' || tree.risk === currentRiskFilter;
-    const matches = matchesSpecies && matchesRisk;
+    const matches = filteredTrees.includes(tree);
 
     if (matches) {
       marker.setStyle({ opacity: 0.4, fillOpacity: 1 });
@@ -467,6 +482,109 @@ function applyFilters() {
       label.getElement().style.opacity = '0.2';
     }
   });
+
+  // Update filtered panel
+  updateFilteredPanel();
+}
+
+// Update the filtered trees panel
+function updateFilteredPanel() {
+  const panel = document.getElementById('filteredPanel');
+  const hasFilter = currentFilter !== 'all' || currentRiskFilter !== 'all';
+
+  if (!hasFilter) {
+    panel.classList.add('hidden');
+    selectedTreeIndex = -1;
+    return;
+  }
+
+  panel.classList.remove('hidden');
+
+  // Update count
+  document.getElementById('filteredCount').textContent = `${filteredTrees.length} trees`;
+
+  // Generate tree list
+  const container = document.getElementById('filteredTreeList');
+  let html = '';
+
+  filteredTrees.forEach((tree, index) => {
+    const isSelected = index === selectedTreeIndex;
+    const riskColor = riskColors[tree.risk];
+    html += `
+      <button onclick="focusTree(${index})" class="w-full flex items-center gap-3 px-4 py-2.5 border-b border-slate-700 hover:bg-slate-700/50 transition-colors text-left ${isSelected ? 'bg-green-500/20' : ''}">
+        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${riskColor}"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm text-white truncate ${isSelected ? 'text-green-400' : ''}">${tree.id}</div>
+          <div class="text-xs text-slate-400 truncate">${tree.species}</div>
+        </div>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html || '<div class="px-4 py-3 text-sm text-slate-400 text-center">No trees match filter</div>';
+
+  // Update navigation
+  updateNavigation();
+}
+
+// Focus on a specific tree
+function focusTree(index) {
+  if (index < 0 || index >= filteredTrees.length) return;
+
+  selectedTreeIndex = index;
+  const tree = filteredTrees[index];
+
+  // Pan to tree
+  map.setView([tree.lat, tree.lng], 18, { animate: true });
+
+  // Highlight the marker briefly
+  const marker = treeMarkers[tree.id];
+  if (marker) {
+    const originalRadius = 8;
+    marker.setRadius(14);
+    setTimeout(() => marker.setRadius(originalRadius), 500);
+  }
+
+  // Update panel
+  updateFilteredPanel();
+
+  // Scroll selected item into view
+  const listContainer = document.getElementById('filteredTreeList');
+  const selectedBtn = listContainer.children[index];
+  if (selectedBtn) {
+    selectedBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// Navigate to previous tree
+function prevTree() {
+  if (filteredTrees.length === 0) return;
+  const newIndex = selectedTreeIndex <= 0 ? filteredTrees.length - 1 : selectedTreeIndex - 1;
+  focusTree(newIndex);
+}
+
+// Navigate to next tree
+function nextTree() {
+  if (filteredTrees.length === 0) return;
+  const newIndex = selectedTreeIndex >= filteredTrees.length - 1 ? 0 : selectedTreeIndex + 1;
+  focusTree(newIndex);
+}
+
+// Update navigation buttons state
+function updateNavigation() {
+  const prevBtn = document.getElementById('prevTreeBtn');
+  const nextBtn = document.getElementById('nextTreeBtn');
+  const navIndex = document.getElementById('treeNavIndex');
+
+  const hasItems = filteredTrees.length > 0;
+  prevBtn.disabled = !hasItems;
+  nextBtn.disabled = !hasItems;
+
+  if (hasItems && selectedTreeIndex >= 0) {
+    navIndex.textContent = `${selectedTreeIndex + 1} / ${filteredTrees.length}`;
+  } else {
+    navIndex.textContent = `- / ${filteredTrees.length}`;
+  }
 }
 
 // Update zone labels with tree counts
