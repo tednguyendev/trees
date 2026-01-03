@@ -4,9 +4,17 @@ let zones = [];
 let treeMarkers = {};
 let zonePolygons = {};
 let treeLabelMarkers = {};
+let zoneLabelMarkers = {};
 let isAddingTree = false;
 let editingTreeId = null;
 let treeCounter = 50;
+
+// Measure state
+let isMeasuring = false;
+let measurePoint1 = null;
+let measurePoint2 = null;
+let measureMarkers = [];
+let measureLine = null;
 
 // Layer groups
 let treesLayer, zonesLayer, labelsLayer;
@@ -44,6 +52,8 @@ function saveData() {
   localStorage.setItem('trees', JSON.stringify(trees));
   localStorage.setItem('treeCounter', treeCounter.toString());
   updateStats();
+  updateZoneCounts();
+  generateZoneList();
 }
 
 // Update stats display
@@ -83,16 +93,19 @@ function initMap() {
       fillOpacity: 0.15,
       interactive: false
     }).addTo(zonesLayer);
+    zonePolygons[zone.id] = poly;
 
-    // Zone label
+    // Zone label with tree count
     const center = poly.getBounds().getCenter();
-    L.marker(center, {
+    const treeCount = trees.filter(t => isTreeInZone(t, zone)).length;
+    const label = L.marker(center, {
       icon: L.divIcon({
         className: 'zone-label',
-        html: zone.name
+        html: `<div>${zone.name}</div><div class="zone-count">${treeCount} trees</div>`
       }),
       interactive: false
     }).addTo(labelsLayer);
+    zoneLabelMarkers[zone.id] = label;
   });
 
   // Draw trees
@@ -257,6 +270,22 @@ function setupUI() {
   document.getElementById('treeModal').onclick = function(e) {
     if (e.target.id === 'treeModal') closeModal();
   };
+
+  // Measure tool
+  document.getElementById('measureBtn').onclick = function(e) {
+    e.stopPropagation();
+    startMeasure();
+  };
+
+  document.getElementById('cancelMeasure').onclick = function(e) {
+    e.stopPropagation();
+    exitMeasureMode();
+  };
+
+  document.getElementById('clearMeasure').onclick = function(e) {
+    e.stopPropagation();
+    clearMeasurement();
+  };
 }
 
 // Generate zone list for dropdown
@@ -331,6 +360,107 @@ function filterTrees(query) {
     } else {
       marker.setStyle({ opacity: 0.1, fillOpacity: 0.2 });
       label.getElement().style.opacity = '0.2';
+    }
+  });
+}
+
+// Measurement tool
+function startMeasure() {
+  isMeasuring = true;
+  measurePoint1 = null;
+  measurePoint2 = null;
+  document.getElementById('measureMode').classList.remove('hidden');
+  document.getElementById('measureBtn').classList.add('hidden');
+  document.getElementById('measureText').textContent = 'Click first point';
+  document.getElementById('map').style.cursor = 'crosshair';
+
+  // Add click handler for measuring
+  map.on('click', onMeasureClick);
+}
+
+function onMeasureClick(e) {
+  if (!isMeasuring) return;
+
+  if (!measurePoint1) {
+    // First point
+    measurePoint1 = e.latlng;
+    const marker = L.circleMarker(e.latlng, {
+      radius: 6,
+      fillColor: '#3b82f6',
+      color: '#3b82f6',
+      weight: 2,
+      fillOpacity: 1
+    }).addTo(map);
+    measureMarkers.push(marker);
+    document.getElementById('measureText').textContent = 'Click second point';
+  } else if (!measurePoint2) {
+    // Second point
+    measurePoint2 = e.latlng;
+    const marker = L.circleMarker(e.latlng, {
+      radius: 6,
+      fillColor: '#3b82f6',
+      color: '#3b82f6',
+      weight: 2,
+      fillOpacity: 1
+    }).addTo(map);
+    measureMarkers.push(marker);
+
+    // Draw line
+    measureLine = L.polyline([measurePoint1, measurePoint2], {
+      color: '#3b82f6',
+      weight: 2,
+      dashArray: '5, 10'
+    }).addTo(map);
+
+    // Calculate distance
+    const distance = measurePoint1.distanceTo(measurePoint2);
+    const distanceText = distance < 1000
+      ? distance.toFixed(1) + ' m'
+      : (distance / 1000).toFixed(2) + ' km';
+
+    document.getElementById('measureDistance').textContent = distanceText;
+    document.getElementById('measureResult').classList.remove('hidden');
+
+    // Exit measure mode but keep result visible
+    exitMeasureMode();
+  }
+}
+
+function exitMeasureMode() {
+  isMeasuring = false;
+  document.getElementById('measureMode').classList.add('hidden');
+  document.getElementById('measureBtn').classList.remove('hidden');
+  document.getElementById('map').style.cursor = '';
+  map.off('click', onMeasureClick);
+}
+
+function clearMeasurement() {
+  measurePoint1 = null;
+  measurePoint2 = null;
+
+  // Remove markers
+  measureMarkers.forEach(m => map.removeLayer(m));
+  measureMarkers = [];
+
+  // Remove line
+  if (measureLine) {
+    map.removeLayer(measureLine);
+    measureLine = null;
+  }
+
+  document.getElementById('measureResult').classList.add('hidden');
+}
+
+// Update zone labels with tree counts
+function updateZoneCounts() {
+  zones.forEach(zone => {
+    const label = zoneLabelMarkers[zone.id];
+    if (label) {
+      const treeCount = trees.filter(t => isTreeInZone(t, zone)).length;
+      label.setIcon(L.divIcon({
+        className: 'zone-label',
+        html: `<div>${zone.name}</div><div class="zone-count">${treeCount} trees</div>`
+      }));
     }
   });
 }

@@ -49,11 +49,20 @@
   background: #3b82f6;
   color: white;
   border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
   pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.zone-label .zone-count {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 2px;
 }
 
 /* Leaflet popup customization */
