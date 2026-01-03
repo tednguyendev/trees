@@ -72,8 +72,8 @@
       </div>
 
       <!-- Add Tree Button -->
-      <button id="addTreeBtn" class="px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2 font-medium">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button id="addTreeBtn" class="group px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2 font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+        <svg class="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
         <span>Add Tree</span>
@@ -88,31 +88,31 @@
     <!-- Stats Panel -->
     <div class="absolute top-4 left-4 bg-white rounded-lg shadow-md border border-gray-200 p-3 z-[1000]">
       <div class="flex gap-4">
-        <div class="text-center">
-          <div id="statTotal" class="text-xl font-bold text-gray-800">50</div>
+        <div class="text-center group cursor-default">
+          <div id="statTotal" class="text-xl font-bold text-gray-800 group-hover:scale-110 transition-transform">50</div>
           <div class="text-[10px] text-gray-500 uppercase">Total</div>
         </div>
         <div class="w-px bg-gray-200"></div>
-        <div class="text-center">
+        <div class="text-center group cursor-default">
           <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
-            <span id="statLow" class="text-xl font-bold text-gray-800">35</span>
+            <span class="w-2.5 h-2.5 bg-green-500 rounded-full group-hover:scale-125 transition-transform"></span>
+            <span id="statLow" class="text-xl font-bold text-gray-800 group-hover:text-green-600 transition-colors">35</span>
           </div>
           <div class="text-[10px] text-gray-500 uppercase">Low</div>
         </div>
         <div class="w-px bg-gray-200"></div>
-        <div class="text-center">
+        <div class="text-center group cursor-default">
           <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
-            <span id="statMedium" class="text-xl font-bold text-gray-800">10</span>
+            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full group-hover:scale-125 transition-transform"></span>
+            <span id="statMedium" class="text-xl font-bold text-gray-800 group-hover:text-amber-600 transition-colors">10</span>
           </div>
           <div class="text-[10px] text-gray-500 uppercase">Medium</div>
         </div>
         <div class="w-px bg-gray-200"></div>
-        <div class="text-center">
+        <div class="text-center group cursor-default">
           <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-            <span id="statHigh" class="text-xl font-bold text-gray-800">5</span>
+            <span class="w-2.5 h-2.5 bg-red-500 rounded-full group-hover:scale-125 transition-transform"></span>
+            <span id="statHigh" class="text-xl font-bold text-gray-800 group-hover:text-red-600 transition-colors">5</span>
           </div>
           <div class="text-[10px] text-gray-500 uppercase">High</div>
         </div>
@@ -136,7 +136,7 @@
       <!-- Modal Header -->
       <div class="bg-green-500 px-5 py-3 flex items-center justify-between">
         <h2 id="modalTitle" class="text-base font-semibold text-white">New Tree</h2>
-        <button id="cancelModal" class="w-7 h-7 flex items-center justify-center rounded bg-white/20 hover:bg-white/30">
+        <button id="cancelModal" class="w-7 h-7 flex items-center justify-center rounded bg-white/20 hover:bg-white/30 transition-all hover:rotate-90 duration-200">
           <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -195,7 +195,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
           </svg>
         </button>
-        <button id="saveTreeBtn" class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
+        <button id="saveTreeBtn" class="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
           Save Tree
         </button>
       </div>

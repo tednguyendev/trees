@@ -29,15 +29,15 @@ function generateLayerPanel() {
 
   layerConfig.forEach((layer, index) => {
     html += `
-      <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 hover:bg-gray-50">
+      <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 hover:bg-gray-50 transition-colors group">
         <div class="flex items-center gap-2">
-          <span class="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-500 font-medium">${layer.level}</span>
+          <span class="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-500 font-medium group-hover:scale-110 transition-transform">${layer.level}</span>
           <span class="text-sm text-gray-700">${layer.name}</span>
         </div>
         <label class="relative inline-flex items-center cursor-pointer">
           <input type="checkbox" id="${layer.id}" ${layer.defaultOn ? 'checked' : ''} class="sr-only peer">
-          <div class="w-9 h-5 bg-gray-200 peer-checked:bg-green-500 rounded-full"></div>
-          <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+          <div class="w-9 h-5 bg-gray-200 peer-checked:bg-green-500 rounded-full transition-colors duration-200"></div>
+          <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4"></div>
         </label>
       </div>
     `;
