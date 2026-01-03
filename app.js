@@ -63,8 +63,8 @@ function updateStats() {
 function initMap() {
   map = L.map('map').setView([1.404, 103.790], 16);
 
-  // Dark map tiles (CartoDB Dark Matter No Labels)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  // Light map tiles (CartoDB Positron)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO',
     subdomains: 'abcd',
     maxZoom: 20
