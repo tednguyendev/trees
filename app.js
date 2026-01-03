@@ -23,14 +23,11 @@ const riskColors = {
 
 // Initialize on DOM ready
 window.onload = function() {
-  console.log('App loading...');
   loadData();
-  console.log('Trees loaded:', trees.length);
   generateLayerPanel();
   initMap();
-  console.log('Map initialized');
   setupUI();
-  console.log('UI setup complete');
+  updateStats();
 };
 
 // Load data
@@ -46,14 +43,31 @@ function loadData() {
 function saveData() {
   localStorage.setItem('trees', JSON.stringify(trees));
   localStorage.setItem('treeCounter', treeCounter.toString());
+  updateStats();
+}
+
+// Update stats display
+function updateStats() {
+  const total = trees.length;
+  const low = trees.filter(t => t.risk === 'low').length;
+  const medium = trees.filter(t => t.risk === 'medium').length;
+  const high = trees.filter(t => t.risk === 'high').length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statLow').textContent = low;
+  document.getElementById('statMedium').textContent = medium;
+  document.getElementById('statHigh').textContent = high;
 }
 
 // Init map
 function initMap() {
   map = L.map('map').setView([1.404, 103.790], 16);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+  // Dark map tiles (CartoDB Dark Matter)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20
   }).addTo(map);
 
   // Create layers
@@ -66,7 +80,7 @@ function initMap() {
     const poly = L.polygon(zone.boundary, {
       color: '#3b82f6',
       weight: 2,
-      fillOpacity: 0.1,
+      fillOpacity: 0.15,
       interactive: false
     }).addTo(zonesLayer);
 
@@ -92,7 +106,6 @@ function initMap() {
 
   // Map click - for adding trees
   map.on('click', function(e) {
-    console.log('Map clicked, isAddingTree:', isAddingTree);
     if (isAddingTree) {
       showAddModal(e.latlng.lat, e.latlng.lng);
     }
@@ -103,18 +116,18 @@ function initMap() {
 function addTreeToMap(tree) {
   const color = riskColors[tree.risk] || riskColors.low;
 
-  // Use circleMarker - simpler and more reliable
+  // Use circleMarker with glow effect
   const marker = L.circleMarker([tree.lat, tree.lng], {
-    radius: 10,
+    radius: 8,
     fillColor: color,
-    color: '#fff',
-    weight: 2,
-    opacity: 1,
+    color: color,
+    weight: 3,
+    opacity: 0.4,
     fillOpacity: 1,
     bubblingMouseEvents: false
   });
 
-  // Drag support for circleMarker (manual implementation)
+  // Drag support for circleMarker
   let dragging = false;
   let hasMoved = false;
 
@@ -129,7 +142,6 @@ function addTreeToMap(tree) {
   // Click to edit (only if not dragged)
   marker.on('click', function(e) {
     if (!isAddingTree && !hasMoved) {
-      console.log('Marker clicked:', tree.id);
       showEditModal(tree);
     }
   });
@@ -155,7 +167,6 @@ function addTreeToMap(tree) {
       tree.lat = pos.lat;
       tree.lng = pos.lng;
       saveData();
-      console.log('Tree moved:', tree.id, pos.lat, pos.lng);
     }
   }
 
@@ -184,7 +195,7 @@ function setupUI() {
     layersDropdown.classList.toggle('hidden');
   };
 
-  // Close dropdown when clicking outside (but not on checkboxes inside)
+  // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
     if (!layersBtn.contains(e.target) && !layersDropdown.contains(e.target)) {
       layersDropdown.classList.add('hidden');
@@ -204,13 +215,11 @@ function setupUI() {
 
   // Add tree button
   document.getElementById('addTreeBtn').onclick = function(e) {
-    console.log('Add Tree button clicked');
     e.stopPropagation();
     isAddingTree = true;
     document.getElementById('addTreeMode').classList.remove('hidden');
     document.getElementById('addTreeBtn').classList.add('hidden');
     document.getElementById('map').style.cursor = 'crosshair';
-    console.log('isAddingTree set to:', isAddingTree);
   };
 
   document.getElementById('cancelAddTree').onclick = function(e) {
