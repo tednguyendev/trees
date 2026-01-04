@@ -122,38 +122,66 @@ function initMap() {
   });
 }
 
+// Create SVG tree icon
+function createTreeIcon(color, isDragging = false) {
+  const scale = isDragging ? 1.2 : 1;
+  const shadow = isDragging ? 'filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));' : 'filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));';
+  const transform = isDragging ? 'transform: scale(1.2) translateY(-4px);' : '';
+
+  const svg = `
+    <div class="tree-svg-container" style="${transform} transition: transform 0.15s ease-out;">
+      <svg width="28" height="36" viewBox="0 0 28 36" style="${shadow} transition: filter 0.15s ease-out;">
+        <!-- Tree crown layers -->
+        <path d="M14 2 L22 14 L18 14 L24 24 L4 24 L10 14 L6 14 Z" fill="${color}" stroke="${color}" stroke-width="1" stroke-linejoin="round"/>
+        <!-- Trunk -->
+        <rect x="11" y="24" width="6" height="8" fill="#8B4513" rx="1"/>
+        <!-- Highlight -->
+        <path d="M14 4 L18 10 L15 10 L19 17 L9 17 L13 10 L10 10 Z" fill="white" opacity="0.25"/>
+      </svg>
+    </div>
+  `;
+
+  return L.divIcon({
+    className: 'tree-marker-svg',
+    html: svg,
+    iconSize: [28, 36],
+    iconAnchor: [14, 36],
+    popupAnchor: [0, -36]
+  });
+}
+
 // Add single tree to map
 function addTreeToMap(tree) {
   const color = riskColors[tree.risk] || riskColors.low;
 
-  // Use circleMarker with glow effect
-  const marker = L.circleMarker([tree.lat, tree.lng], {
-    radius: 8,
-    fillColor: color,
-    color: color,
-    weight: 3,
-    opacity: 0.4,
-    fillOpacity: 1,
+  // Use custom SVG tree icon
+  const marker = L.marker([tree.lat, tree.lng], {
+    icon: createTreeIcon(color),
     bubblingMouseEvents: false
   });
 
-  // Drag support for circleMarker
+  // Manual drag support
   let dragging = false;
   let hasMoved = false;
 
   marker.on('mousedown', function(e) {
+    if (isAddingTree) return;
     dragging = true;
     hasMoved = false;
     map.dragging.disable();
+
+    // Visual feedback
+    document.body.classList.add('tree-dragging');
+    marker.setIcon(createTreeIcon(color, true));
+    marker.setZIndexOffset(1000);
+    if (treeLabelMarkers[tree.id]) {
+      treeLabelMarkers[tree.id].getElement().style.opacity = '0.5';
+    }
+
     map.on('mousemove', onDrag);
     map.on('mouseup', onDragEnd);
-  });
 
-  // Click to edit (only if not dragged)
-  marker.on('click', function(e) {
-    if (!isAddingTree && !hasMoved) {
-      showEditModal(tree);
-    }
+    L.DomEvent.stopPropagation(e);
   });
 
   function onDrag(e) {
@@ -173,12 +201,29 @@ function addTreeToMap(tree) {
       map.off('mousemove', onDrag);
       map.off('mouseup', onDragEnd);
 
-      const pos = marker.getLatLng();
-      tree.lat = pos.lat;
-      tree.lng = pos.lng;
-      saveData();
+      // Reset visual feedback
+      document.body.classList.remove('tree-dragging');
+      marker.setIcon(createTreeIcon(color, false));
+      marker.setZIndexOffset(0);
+      if (treeLabelMarkers[tree.id]) {
+        treeLabelMarkers[tree.id].getElement().style.opacity = '1';
+      }
+
+      if (hasMoved) {
+        const pos = marker.getLatLng();
+        tree.lat = pos.lat;
+        tree.lng = pos.lng;
+        saveData();
+      }
     }
   }
+
+  // Click to edit (only if not dragged)
+  marker.on('click', function(e) {
+    if (!isAddingTree && !hasMoved) {
+      showEditModal(tree);
+    }
+  });
 
   marker.addTo(treesLayer);
   treeMarkers[tree.id] = marker;
@@ -473,13 +518,15 @@ function applyFilters() {
     if (!marker || !label) return;
 
     const matches = filteredTrees.includes(tree);
+    const markerEl = marker.getElement();
+    const labelEl = label.getElement();
 
     if (matches) {
-      marker.setStyle({ opacity: 0.4, fillOpacity: 1 });
-      label.getElement().style.opacity = '1';
+      if (markerEl) markerEl.style.opacity = '1';
+      if (labelEl) labelEl.style.opacity = '1';
     } else {
-      marker.setStyle({ opacity: 0.1, fillOpacity: 0.2 });
-      label.getElement().style.opacity = '0.2';
+      if (markerEl) markerEl.style.opacity = '0.25';
+      if (labelEl) labelEl.style.opacity = '0.25';
     }
   });
 
@@ -537,12 +584,14 @@ function focusTree(index) {
   // Pan to tree
   map.setView([tree.lat, tree.lng], 18, { animate: true });
 
-  // Highlight the marker briefly
+  // Highlight the marker briefly with bounce animation
   const marker = treeMarkers[tree.id];
   if (marker) {
-    const originalRadius = 8;
-    marker.setRadius(14);
-    setTimeout(() => marker.setRadius(originalRadius), 500);
+    const el = marker.getElement();
+    if (el) {
+      el.classList.add('tree-bounce');
+      setTimeout(() => el.classList.remove('tree-bounce'), 600);
+    }
   }
 
   // Update panel

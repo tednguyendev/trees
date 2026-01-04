@@ -1,4 +1,49 @@
-/* Custom marker styles */
+/* SVG Tree Marker styles */
+.tree-marker-svg {
+  background: transparent !important;
+  border: none !important;
+  cursor: grab;
+}
+
+.tree-marker-svg:hover {
+  cursor: grab;
+}
+
+.tree-marker-svg:hover .tree-svg-container {
+  transform: scale(1.1) translateY(-2px);
+}
+
+.tree-svg-container {
+  transition: transform 0.15s ease-out;
+}
+
+/* Dragging state */
+.tree-dragging {
+  cursor: grabbing !important;
+}
+
+.tree-dragging * {
+  cursor: grabbing !important;
+}
+
+.tree-dragging .leaflet-marker-draggable {
+  cursor: grabbing !important;
+}
+
+/* Bounce animation for focus */
+@keyframes treeBounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-12px); }
+  50% { transform: translateY(-6px); }
+  75% { transform: translateY(-3px); }
+}
+
+.tree-bounce .tree-svg-container,
+.tree-bounce {
+  animation: treeBounce 0.6s ease-out;
+}
+
+/* Legacy marker styles (keeping for reference) */
 .tree-marker {
   border-radius: 50%;
   border: 2px solid white;
